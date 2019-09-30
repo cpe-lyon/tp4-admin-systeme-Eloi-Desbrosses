@@ -4,45 +4,170 @@
 
 * Commencez par créer deux groupes groupe1 et groupe2**
 
+```
+serveur@serveur:~$ sudo addgroup groupe1
+Adding group `groupe1' (GID 1001) ...
+Done.
+serveur@serveur:~$ sudo addgroup groupe2
+Adding group `groupe2' (GID 1002) ...
+Done.
+serveur@serveur:~$
+```
+
 * Créez ensuite 4 utilisateurs u1, u2, u3, u4 avec la commande useradd, en demandant la création de
 leur dossier personnel et avec bash pour shell
+
+Je vous passe les interractions avec l'invite de commande pour définir le nom, numéro de salle, téléphone, etc.
+
+```
+ sudo adduser u1 --home /home/u1 --shell $SHELL
+ sudo adduser u2 --home /home/u2 --shell $SHELL
+ sudo adduser u3 --home /home/u3 --shell $SHELL
+ sudo adduser u4 --home /home/u4 --shell $SHELL
+```
 
 * Placez les utilisateurs dans les groupes :
 
   - u1, u2, u4 dans groupe1
+  
+```  
+serveur@serveur:~$ sudo usermod -a -G groupe1 u1
+serveur@serveur:~$ sudo usermod -a -G groupe1 u2
+serveur@serveur:~$ sudo usermod -a -G groupe1 u4
+```
 
   - u2, u3, u4 dans groupe2
 
+```
+serveur@serveur:~$ sudo usermod -a -G groupe2 u2
+serveur@serveur:~$ sudo usermod -a -G groupe2 u3
+serveur@serveur:~$ sudo usermod -a -G groupe2 u4
+```
+
 * Donnez deux moyens d’afficher les membres de groupe2
 
-* Faites de groupe1 le groupe propriétaire de /home/u1 et /home/u2 et de groupe2 le groupe propriétaire
-de /home/u3 et /home/u4
+```
+serveur@serveur:~$ grep "groupe2" /etc/group
+groupe2:x:1002:u2,u3,u4
+```
+
+ou
+
+```
+serveur@serveur:~$ getent group groupe1
+groupe1:x:1001:u1,u2,u4
+```
+
+
+* Faites de groupe1 le groupe propriétaire de /home/u1 et /home/u2 et de groupe2 le groupe propriétaire de /home/u3 et /home/u4
+
+```
+serveur@serveur:/home$ sudo chgrp groupe1 u1 u2
+serveur@serveur:/home$ sudo chgrp groupe2 u3 u4
+serveur@serveur:/home$ ls -l
+total 20
+drwxr-xr-x 9 serveur serveur 4096 sept. 23 16:43 serveur
+drwxr-xr-x 2 u1      groupe1 4096 sept. 30 14:06 u1
+drwxr-xr-x 2 u2      groupe1 4096 sept. 30 14:11 u2
+drwxr-xr-x 2 u3      u3      4096 sept. 30 14:12 u3
+drwxr-xr-x 2 u4      u4      4096 sept. 30 14:12 u4
+```
 
 * Remplacez le groupe primaire des utilisateurs :
 
   - groupe1 pour u1 et u2
   
+  ```
+  serveur@serveur:~$ sudo usermod u1 -g groupe1
+  serveur@serveur:~$ sudo usermod u2 -g groupe1
+  ```
+  
   - groupe2 pour u3 et u4
+  ```
+  serveur@serveur:~$ sudo usermod u3 -g groupe2
+  serveur@serveur:~$ sudo usermod u4 -g groupe2
+  ```
 
 * Créez deux répertoires /home/groupe1 et /home/groupe2 pour le contenu commun aux groupes, et
 mettez en place les permissions permettant aux membres de chaque groupe d’écrire dans le dossier
 associé.
 
-* Comment faire pour que, dans ces dossiers, seul le propriétaire d’un fichier ait le droit de renommer
-ou supprimer ce fichier ?
+```
+serveur@serveur:/home$ sudo mkdir groupe1
+serveur@serveur:/home$ sudo mkdir groupe2
+serveur@serveur:/home$ sudo chgrp groupe1 groupe1
+serveur@serveur:/home$ sudo chgrp groupe2 groupe2
+serveur@serveur:/home$ ls -l
+total 28
+drwxr-xr-x 2 root    groupe1 4096 sept. 30 14:39 groupe1
+drwxr-xr-x 2 root    groupe2 4096 sept. 30 14:39 groupe2
+serveur@serveur:/home$ sudo chmod g+w groupe1
+serveur@serveur:/home$ sudo chmod g+w groupe2
+serveur@serveur:/home$ ls -l
+total 28
+drwxrwxr-x 2 root    groupe1 4096 sept. 30 14:39 groupe1
+drwxrwxr-x 2 root    groupe2 4096 sept. 30 14:39 groupe2
+```
+
+* Comment faire pour que, dans ces dossiers, seul le propriétaire d’un fichier ait le droit de renommer ou supprimer ce fichier ?
+
+Pour cela il est nécessaire d'ajouter  un sticky bit au droits du dossier. Cela est faisable via les commandes:
+
+```
+serveur@serveur:/home$ sudo chmod +t groupe1
+serveur@serveur:/home$ sudo chmod +t groupe2
+```
 
 * Pouvez-vous vous connecter en tant que u1 ? Pourquoi ?
+
+Non, il n'est pas possible de ce connecter en tant que u1 car celui-ci n'as pas de mot de passe et est donc considérer comme un compte désactivé. Ont ne peut donc pas s'y connecter.
 
 * Activez le compte de l’utilisateur u1 et vérifiez que vous pouvez désormais vous connecter avec son
 compte.
 
+```
+serveur@serveur:/home$ sudo passwd u1
+New password:
+Retype new password:
+passwd: password updated successfully
+serveur@serveur:/home$ su u1
+Password:
+u1@serveur:/home$
+```
+
 * Quels sont l’uid et le gid de u1 ?
+
+```
+u1@serveur:/home$ id
+uid=1001(u1) gid=1001(groupe1) groups=1001(groupe1)
+```
+u1 à pour uid 1001 et gid 1001.
 
 * Quel utilisateur a pour uid 1003 ?
 
+```
+u1@serveur:/home$ id 1003
+uid=1003(u3) gid=1002(groupe2) groups=1002(groupe2)
+```
+
+l'utilisateur qui à pour uid 1003 et l'utilisateur u3.
+
 * Quel est l’id du groupe groupe1 ?
 
+```
+u1@serveur:/home$ getent group groupe1
+groupe1:x:1001:u1,u2,u4
+```
+
+L'id du groupe 1 est le 1001.
+
 * Quel groupe a pour guid 1002 ? ( Rien n’empêche d’avoir un groupe dont le nom serait 1002...)
+
+```
+u1@serveur:/home$ getent group 1002
+groupe2:x:1002:u2,u3,u4
+```
+le groupe qui à le guid 1002 est le groupe2.
 
 * Retirez l’utilisateur u3 du groupe groupe2. Que se passe-t-il ? Expliquez.
 
@@ -53,12 +178,43 @@ compte.
   — l’utilisateur est averti 14 jours avant l’expiration de son mot de passe
   — le compte sera bloqué 30 jours après expiration du mot de passe
 
+```
+serveur@serveur:/home$ sudo chage -E 2019-06-01 u4
+serveur@serveur:/home$ sudo chage -M 90 u4
+serveur@serveur:/home$ sudo chage -m 5 u4
+serveur@serveur:/home$ sudo chage -W 14 u4
+serveur@serveur:/home$ sudo chage -l u4
+Last password change                                    : sept. 30, 2019
+Password expires                                        : déc. 29, 2019
+Password inactive                                       : janv. 28, 2020
+Account expires                                         : juin 01, 2019
+Minimum number of days between password change          : 5
+Maximum number of days between password change          : 90
+Number of days of warning before password expires       : 14
+```
+
 * Quel est l’interpréteur de commandes (Shell) de l’utilisateur root ?
+
+```
+serveur@serveur:~$ getent passwd root
+root:x:0:0:root:/root:/bin/bash
+```
+l'interpréteur de commandes de l'utilisateur rout est /bin/bash.
 
 * à quoi correspond l’utilisateur nobody ?
 
-* Par défaut, combien de temps la commande sudo conserve-t-elle votre mot de passe en mémoire ?
+L'utilisateur nobody est utilisé par tout programme qui ne nécessite pas de permission particulière. Cela est particulièrement utile dans le cas de service qui peuvent être compromis (httpd par exemple). Cela permet de limiter les dégats.
+
+ * Par défaut, combien de temps la commande sudo conserve-t-elle votre mot de passe en mémoire ?
 Quelle commande permet de forcer sudo à oublier votre mot de passe ?
+ minutes par défaut.
+ 
+Selon le manuel de la commande sudo, celle-ci conserve le mot de passe en mémoire pendant 15
+for 15 minutes. Cela peux être réinitialiser avec la commande:
+
+```
+serveur@serveur:~$ sudo -K
+```
 
 ## Exercice 2. Gestion des permissions
 

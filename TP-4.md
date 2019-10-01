@@ -221,50 +221,193 @@ serveur@serveur:~$ sudo -K
 * Dans votre $HOME, créez un dossier test, et dans ce dossier un fichier fichier contenant quelques
 lignes de texte. Quels sont les droits sur test et fichier ?
 
-* Retirez tous les droits sur ce fichier (même pour vous), puis essayez de le modifier et de l’afficher en
-tant que root. Conclusion ?
+```
+serveur@serveur:~$ ll
+drwxrwxr-x  2 serveur serveur    4096 oct.   1 11:56 test/
+```
+
+Test possèdes les droits suivants:
+ - Utilisateur: Lecture, Écriture, Exécution
+ - Groupe: Lecture, Écriture, Exécution
+ - Autres: Lecture, Exécution
+
+```
+serveur@serveur:~/test$ ll
+-rw-rw-r--  1 serveur serveur   48 oct.   1 11:56 fichier
+```
+
+pour le fichier fichier, celui-ci possède les droits suivants:
+ - Utilisateur: Lecture, Écriture
+ - Groupe: Lecture, Écriture
+ - Autres: Lecture
+
+* Retirez tous les droits sur ce fichier (même pour vous), puis essayez de le modifier et de l’afficher en tant que root. Conclusion ?
+
+```
+serveur@serveur:~/test$ sudo chmod 000 fichier
+serveur@serveur:~/test$ sudo cat fichier
+un super fichier
+avec quelques
+lignes de textes
+serveur@serveur:~/test$ sudo nano fichier
+serveur@serveur:~/test$ sudo cat fichier
+un super fichier
+avec quelques
+lignes de textes
+et une de plus !
+```
+Les droits d'accès configuré ne s'applique pas au super utilisateur root.
 
 * Redonnez vous les droits en écriture et exécution sur fichier puis exécutez la commande echo "echo
 Hello" > fichier. On a vu lors des TP précédents que cette commande remplace le contenu d’un
 fichier s’il existe déjà. Que peut-on dire au sujet des droits ?
 
+```
+serveur@serveur:~/test$ sudo chmod 300 fichier
+serveur@serveur:~/test$ echo "echo Hello" > fichier
+serveur@serveur:~/test$ cat fichier
+cat: fichier: Permission denied
+serveur@serveur:~/test$ sudo cat fichier
+echo Hello
+```
+Comme nous possédons le droit d'écriture sur le fichier, il est possible d'écrire dans celui-ci et donc de remplacer son contenu.
+
 * Essayez d’exécuter le fichier. Est-ce que cela fonctionne ? Et avec sudo ? Expliquez.
 
-* Placez-vous dans le répertoire test, et retirez-vous le droit en lecture pour ce répertoire. Listez le
-contenu du répertoire, puis exécutez ou affichez le contenu du fichier fichier. Qu’en déduisez-vous ?
-Rétablissez le droit en lecture sur test
+```
+serveur@serveur:~/test$ ./fichier
+bash: ./fichier: Permission denied
+serveur@serveur:~/test$ sudo ./fichier
+Hello
+```
+Comme nous n'avons pas les droits d'exécution, le système nous bloque. En revache, comme root à tout les droits, cela ne le bloque pas.
+
+* Placez-vous dans le répertoire test, et retirez-vous le droit en lecture pour ce répertoire. Listez le contenu du répertoire, puis exécutez ou affichez le contenu du fichier fichier. Qu’en déduisez-vous ? Rétablissez le droit en lecture sur test
+
+```
+serveur@serveur:~/test$ sudo chmod u-r ../test
+serveur@serveur:~/test$ ls
+ls: cannot open directory '.': Permission denied
+serveur@serveur:~/test$ ./fichier
+bash: ./fichier: Permission denied
+serveur@serveur:~/test$  
+```
+Les droits sont testé au fur et à mesure des commandes. Et donc sans le droit de l'ecture je ne peux afficher le contenu du dossier.
 
 * Créez dans test un fichier nouveau ainsi qu’un répertoire sstest. Retirez au fichier nouveau et au
-répertoire test le droit en écriture. Tentez de modifier le fichier nouveau. Rétablissez ensuite le droit
-en écriture au répertoire test. Tentez de modifier le fichier nouveau, puis de le supprimer. Que pouvezvous déduire de toutes ces manipulations ?
+répertoire test le droit en écriture. Tentez de modifier le fichier nouveau. Rétablissez ensuite le droit en écriture au répertoire test. Tentez de modifier le fichier nouveau, puis de le supprimer. Que pouvezvous déduire de toutes ces manipulations ?
 
-* Positionnez vous dans votre répertoire personnel, puis retirez le droit en exécution du répertoire test.
-Tentez de créer, supprimer, ou modifier un fichier dans le répertoire test, de vous y déplacer, d’en
-lister le contenu, etc…Qu’en déduisez vous quant au sens du droit en exécution pour les répertoires ?
+```
+serveur@serveur:~/test$ nano nouveau
+serveur@serveur:~/test$ mkdir sstest
+serveur@serveur:~/test$ chmod u-w nouveau
+serveur@serveur:~/test$ chmod u-w ../test
+serveur@serveur:~/test$ nano nouveau
+[ Error writing nouveau: Permission denied ]
+serveur@serveur:~/test$ chmod u+w ../test
+serveur@serveur:~/test$ nano nouveau
+[ Error writing nouveau: Permission denied ] 
+serveur@serveur:~/test$ rm nouveau
+rm: remove write-protected regular file 'nouveau'? yes
+serveur@serveur:~/test$ ls
+fichier  sstest
+```
+Les fichiers n'hérite pas des droits d'un dossier, ils ont chacun des droits spécifique.
 
-* Rétablissez le droit en exécution du répertoire test. Positionnez vous dans ce répertoire et retirez lui
-à nouveau le droit d’exécution. Essayez de créer, supprimer et modifier un fichier dans le répertoire
-test, de vous déplacer dans ssrep, de lister son contenu. Qu’en concluez-vous quant à l’influence des
-droits que l’on possède sur le répertoire courant ? Peut-on retourner dans le répertoire parent avec ”cd
-..” ? Pouvez-vous donner une explication ?
+* Positionnez vous dans votre répertoire personnel, puis retirez le droit en exécution du répertoire test. Tentez de créer, supprimer, ou modifier un fichier dans le répertoire test, de vous y déplacer, d’en lister le contenu, etc…Qu’en déduisez vous quant au sens du droit en exécution pour les répertoires ?
 
-* Rétablissez le droit en exécution du répertoire test. Attribuez au fichier fichier les droits suffisants
-pour qu’une autre personne de votre groupe puisse y accéder en lecture, mais pas en écriture.
+```
+serveur@serveur:~$ chmod u-x test
+serveur@serveur:~$ nano test/nouveau
+[ Path 'test' is not accessible ]
+serveur@serveur:~$ cd test/
+-bash: cd: test/: Permission denied
+serveur@serveur:~$ ls test
+ls: cannot access 'test/sstest': Permission denied
+ls: cannot access 'test/fichier': Permission denied
+fichier  sstest
+```
 
-* Définissez un umask très restrictif qui interdit à quiconque à part vous l’accès en lecture ou en écriture,
-ainsi que la traversée de vos répertoires. Testez sur un nouveau fichier et un nouveau répertoire.
+Si une commande nécessite d'accéder au contenu d'un répertoir alors que le droit de lecture lui est retiré, il ne sera pas possible d'exécuter la commande.
+
+* Rétablissez le droit en exécution du répertoire test. Positionnez vous dans ce répertoire et retirez lui à nouveau le droit d’exécution. Essayez de créer, supprimer et modifier un fichier dans le répertoire test, de vous déplacer dans ssrep, de lister son contenu. Qu’en concluez-vous quant à l’influence des droits que l’on possède sur le répertoire courant ? Peut-on retourner dans le répertoire parent avec ”cd ..” ? Pouvez-vous donner une explication ?
+
+```
+serveur@serveur:~$ cd test/
+serveur@serveur:~/test$ chmod u-x ../test
+serveur@serveur:~/test$ nano nouveau
+[ Path '.': Permission denied ]
+serveur@serveur:~/test$ cd sstest
+-bash: cd: sstest: Permission denied
+serveur@serveur:~/test$ ls
+ls: cannot open directory '.': Permission denied
+serveur@serveur:~/test$ cd ..
+serveur@serveur:~$ 
+```
+
+les droits du répertoir courant sont aussi important que si l'on essayais de faire les mêmes opérations depuis un répertoir parent. Comme pour la question précédente, les droits du dossier sont pris en compte pour chaque commande nécessitant d'utiliser le contenu d'un dossier.
+
+* Rétablissez le droit en exécution du répertoire test. Attribuez au fichier fichier les droits suffisants pour qu’une autre personne de votre groupe puisse y accéder en lecture, mais pas en écriture.
+
+```
+serveur@serveur:~/test$ chmod 650 fichier
+serveur@serveur:~/test$ ll
+total 16
+drwxr-xr-x  3 serveur serveur 4096 oct.   1 12:30 ./
+drwxr-xr-x 10 serveur serveur 4096 oct.   1 11:56 ../
+-rw-r-x---  1 serveur serveur   11 oct.   1 12:12 fichier*
+drwxrwxr-x  2 serveur serveur 4096 oct.   1 12:21 sstest/
+```
+
+* Définissez un umask très restrictif qui interdit à quiconque à part vous l’accès en lecture ou en écriture, ainsi que la traversée de vos répertoires. Testez sur un nouveau fichier et un nouveau répertoire.
+
+```
+serveur@serveur:~$ touch fichier
+serveur@serveur:~$ mkdir folder
+serveur@serveur:~$ umask 177
+serveur@serveur:~$ ll
+total 3728
+drwxr-xr-x 10 serveur serveur    4096 oct.   1 12:47 ./
+drwxr-xr-x  9 root    root       4096 sept. 30 14:39 ../
+-rw-------  1 serveur serveur       0 oct.   1 12:47 fichier
+drw-------  2 serveur serveur    4096 oct.   1 12:47 folder/
+```
 
 * Définissez un umask très permissif qui autorise tout le monde à lire vos fichiers et traverser vos répertoires, mais n’autorise que vous à écrire. Testez sur un nouveau fichier et un nouveau répertoire.
 
-* Définissez un umask équilibré qui vous autorise un accès complet et autorise un accès en lecture aux
-membres de votre groupe. Testez sur un nouveau fichier et un nouveau répertoire.
+```
+serveur@serveur:~$ umask 011
+serveur@serveur:~$ ll
+total 3728
+drwxr-xr-x 10 serveur serveur    4096 oct.   1 12:47 ./
+drwxr-xr-x  9 root    root       4096 sept. 30 14:39 ../
+-rwxr-xr-x  1 serveur serveur       0 oct.   1 12:47 fichier*
+drwxr-xr-x  2 serveur serveur    4096 oct.   1 12:47 folder/
+serveur@serveur:~$  
+```
 
-* Transcrivez les commandes suivantes de la notation classique à la notation octale ou vice-versa (vous
-pourrez vous aider de la commande stat pour valider vos réponses) :
-  - chmod u=rx,g=wx,o=r fic
-  - chmod uo+w,g-rx fic en sachant que les droits initiaux de fic sont r--r-x---
-  - chmod 653 fic en sachant que les droits initiaux de fic sont 711
-  - chmod u+x,g=w,o-r fic en sachant que les droits initiaux de fic sont r--r-x---
+* Définissez un umask équilibré qui vous autorise un accès complet et autorise un accès en lecture aux membres de votre groupe. Testez sur un nouveau fichier et un nouveau répertoire.
 
-* Affichez les droits sur le programme passwd. Que remarquez-vous ? En affichant les droits du fichier
-/etc/passwd, pouvez-vous justifier les permissions sur le programme passwd ?
+```
+serveur@serveur:~$ umask 037
+serveur@serveur:~$ ll
+total 3728
+drwxr-xr-x 10 serveur serveur    4096 oct.   1 12:47 ./
+drwxr-xr-x  9 root    root       4096 sept. 30 14:39 ../
+-rwxr-----  1 serveur serveur       0 oct.   1 12:47 fichier*
+drwxr-----  2 serveur serveur    4096 oct.   1 12:47 folder/
+serveur@serveur:~$  
+```
+
+* Transcrivez les commandes suivantes de la notation classique à la notation octale ou vice-versa (vous pourrez vous aider de la commande stat pour valider vos réponses) :
+  - chmod u=rx,g=wx,o=r fic `534`
+  - chmod uo+w,g-rx fic en sachant que les droits initiaux de fic sont r--r-x--- `501`
+  - chmod 653 fic en sachant que les droits initiaux de fic sont 711 `Hein ?`
+  - chmod u+x,g=w,o-r fic en sachant que les droits initiaux de fic sont r--r-x--- `520`
+
+* Affichez les droits sur le programme passwd. Que remarquez-vous ? En affichant les droits du fichier /etc/passwd, pouvez-vous justifier les permissions sur le programme passwd ?
+
+```
+serveur@serveur:~/folder$ ll /etc/passwd
+-rw-r--r-- 1 root root 1801 sept. 30 15:08 /etc/passwd
+```
